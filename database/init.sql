@@ -4,11 +4,40 @@ CREATE TABLE IF NOT EXISTS products (
     price DECIMAL(10, 2) NOT NULL,
     description TEXT,
     stock INT NOT NULL DEFAULT 0,
+    image MEDIUMTEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Data Contoh
-INSERT INTO products (name, description, price, stock) VALUES
-('Keyboard Mekanikal', 'Keyboard mekanikal switch blue', 500000, 25),
-('Mouse Wireless', 'Description for Mouse Wireless', 350000, 10),
-('Headset Gaming', 'Description for Headset Gaming', 800000, 15);
+INSERT INTO products (name, description, price, stock, image) VALUES
+(
+    'Keyboard Mekanikal',
+    'Keyboard mekanikal switch blue',
+    500000,
+    25,
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+),
+
+(
+    'Mouse Wireless',
+    'Mouse wireless untuk kebutuhan sehari-hari',
+    350000,
+    10,
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+),
+
+(
+    'Mouse Gaming',
+    'Mouse gaming dengan sensor responsif',
+    250000,
+    11,
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+),
+
+(
+    'Headset Gaming',
+    'Headset gaming dengan microphone',
+    800000,
+    15,
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+);
