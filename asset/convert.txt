@@ -1,0 +1,14 @@
+//post
+$b64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes("product-service\asset\mouse1.jpg"))
+Set-Content -LiteralPath "product-service\asset\mouse1.jpg.b64" -Value $b64 -Encoding ascii -NoNewline
+(Get-Item "product-service\asset\mouse1.jpg").Length / 1MB
+
+// lebih dari 2mb
+$b64Large = [Convert]::ToBase64String([IO.File]::ReadAllBytes("product-service\asset\mouse.png"))
+Set-Content -LiteralPath "product-service\asset\mouse_Large.png.b64" -Value $b64Large -Encoding ascii -NoNewline
+(Get-Item "product-service\asset\mouse.png").Length / 1MB
+
+//update
+$b64Update = [Convert]::ToBase64String([IO.File]::ReadAllBytes("product-service\asset\mouse_update.jpg"))
+Set-Content -LiteralPath "product-service\asset\mouse_update.jpg.b64" -Value $b64Update -Encoding ascii -NoNewline
+(Get-Item "product-service\asset\mouse_update.jpg.b64").Length
