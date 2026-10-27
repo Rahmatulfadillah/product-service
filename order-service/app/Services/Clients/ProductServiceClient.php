@@ -26,21 +26,27 @@ class ProductServiceClient
             );
         }
 
+        // Produk tidak ditemukan.
         if ($response->status() === 404) {
             return null;
         }
 
+        // Respons gagal selain 404.
         if (!$response->successful()) {
             throw new RuntimeException(
-                'Product Service mengembalikan respons yang tidak berhasil.'
+                'Product Service mengembalikan respons gagal.'
             );
         }
 
-        $product = $response->json();
+        // Produk berada di dalam properti "data".
+        $product = $response->json('data');
 
-        if (!is_array($product)) {
+        if (
+            !is_array($product) ||
+            !isset($product['id'], $product['name'], $product['price'], $product['stock'])
+        ) {
             throw new RuntimeException(
-                'Format respons Product Service tidak valid.'
+                'Format data produk dari Product Service tidak valid.'
             );
         }
 
