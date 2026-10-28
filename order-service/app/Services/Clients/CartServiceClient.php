@@ -2,9 +2,11 @@
 
 namespace App\Services\Clients;
 
+use App\Exceptions\CartServiceUnavailableException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
+use Throwable;
 
 class CartServiceClient
 {
@@ -18,8 +20,8 @@ class CartServiceClient
         try {
             $response = Http::timeout(5)
                 ->get($baseUrl . '/carts/' . $userId);
-        } catch (ConnectionException $e) {
-            throw new RuntimeException(
+        } catch (Throwable $e) {
+            throw new CartServiceUnavailableException(
                 'Cart Service tidak dapat dihubungi.',
                 0,
                 $e
@@ -27,7 +29,7 @@ class CartServiceClient
         }
 
         if (!$response->successful()) {
-            throw new RuntimeException(
+            throw new CartServiceUnavailableException(
                 'Cart Service mengembalikan respons gagal.'
             );
         }
@@ -36,10 +38,12 @@ class CartServiceClient
 
         if (
             !is_array($body) ||
-            !array_key_exists('data', $body) ||
-            !is_array($body['data'])
+            !isset($body['data']) ||
+            !is_array($body['data']) ||
+            !isset($body['data']['items']) ||
+            !is_array($body['data']['items'])
         ) {
-            throw new RuntimeException(
+            throw new CartServiceUnavailableException(
                 'Format respons Cart Service tidak valid.'
             );
         }
@@ -59,7 +63,9 @@ class CartServiceClient
                 ->delete($baseUrl . '/carts/' . $userId);
 
             return $response->successful();
-        } catch (ConnectionException $e) {
+        } catch (Throwable $e) {
+            // Checkout sudah berhasil, jadi kegagalan
+            // mengosongkan keranjang tidak membatalkan order.
             return false;
         }
     }

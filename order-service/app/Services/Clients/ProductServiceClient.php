@@ -2,9 +2,9 @@
 
 namespace App\Services\Clients;
 
-use Illuminate\Http\Client\ConnectionException;
+use App\Exceptions\ProductServiceUnavailableException;
 use Illuminate\Support\Facades\Http;
-use RuntimeException;
+use Throwable;
 
 class ProductServiceClient
 {
@@ -18,34 +18,36 @@ class ProductServiceClient
         try {
             $response = Http::timeout(5)
                 ->get($baseUrl . '/products/' . $productId);
-        } catch (ConnectionException $e) {
-            throw new RuntimeException(
+        } catch (Throwable $e) {
+            throw new ProductServiceUnavailableException(
                 'Product Service tidak dapat dihubungi.',
                 0,
                 $e
             );
         }
 
-        // Produk tidak ditemukan.
         if ($response->status() === 404) {
             return null;
         }
 
-        // Respons gagal selain 404.
         if (!$response->successful()) {
-            throw new RuntimeException(
+            throw new ProductServiceUnavailableException(
                 'Product Service mengembalikan respons gagal.'
             );
         }
 
-        // Produk berada di dalam properti "data".
         $product = $response->json('data');
 
         if (
             !is_array($product) ||
-            !isset($product['id'], $product['name'], $product['price'], $product['stock'])
+            !isset(
+                $product['id'],
+                $product['name'],
+                $product['price'],
+                $product['stock']
+            )
         ) {
-            throw new RuntimeException(
+            throw new ProductServiceUnavailableException(
                 'Format data produk dari Product Service tidak valid.'
             );
         }
