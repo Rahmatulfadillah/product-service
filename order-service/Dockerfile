@@ -11,18 +11,18 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
-RUN sed -ri 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+RUN sed -ri 's!DocumentRoot /var/www/html!DocumentRoot /var/www/html/public!g' \
     /etc/apache2/sites-available/000-default.conf \
-    && sed -ri 's!/var/www/!${APACHE_DOCUMENT_ROOT}/!g' \
-    /etc/apache2/apache2.conf
+    && sed -ri 's!<Directory /var/www/>!<Directory /var/www/html/public>!g' \
+    /etc/apache2/apache2.conf \
+    && sed -ri '/<Directory \/var\/www\/html\/public>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' \
+    /etc/apache2/apache2.conf \
+    && echo 'ServerName localhost' >> /etc/apache2/apache2.conf
 
 WORKDIR /var/www/html
 
-# Salin seluruh kode Laravel terlebih dahulu,
-# termasuk file artisan.
 COPY . .
 
-# Install dependency setelah file artisan tersedia.
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
