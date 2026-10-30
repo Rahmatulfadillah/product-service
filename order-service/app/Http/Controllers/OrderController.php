@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\OrderBusinessException;
 use App\Exceptions\CartServiceUnavailableException;
 use App\Exceptions\ProductServiceUnavailableException;
+use App\Http\Requests\StoreOrderRequest;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,12 +17,10 @@ class OrderController extends Controller
      * Checkout keranjang menjadi pesanan.
      */
     public function checkout(
-        Request $request,
+        StoreOrderRequest $request,
         OrderService $orderService
     ): JsonResponse {
-        $validated = $request->validate([
-            'user_id' => 'required|integer|min:1',
-        ]);
+        $validated = $request->validated();
 
         try {
             $order = $orderService->checkout(
