@@ -3,11 +3,15 @@
 namespace App\Services;
 
 use App\Exceptions\CartItemNotFoundException;
+use App\Exceptions\ProductNotFoundException;
 use App\Models\CartItem;
 
 class CartService
 {
-    // Mengambil isi keranjang user beserta total jumlah barang.
+    public function __construct(
+        private ProductService $productService
+    ) {}
+
     public function getCart(int $userId): array
     {
         $items = CartItem::forUser($userId)->get();
@@ -19,13 +23,15 @@ class CartService
         ];
     }
 
-    // Menambah item ke keranjang.
-    // Jika produk sudah ada, quantity akan ditambahkan.
     public function addItem(
         int $userId,
         int $productId,
         int $quantity
     ): CartItem {
+        if (! $this->productService->getProduct($productId)) {
+            throw new ProductNotFoundException($productId);
+        }
+
         $item = CartItem::firstOrNew([
             'user_id' => $userId,
             'product_id' => $productId,
@@ -39,7 +45,6 @@ class CartService
         return $item;
     }
 
-    // Mengubah jumlah item.
     public function updateQuantity(int $id, int $quantity): CartItem
     {
         $item = CartItem::find($id);
@@ -53,7 +58,6 @@ class CartService
         return $item;
     }
 
-    // Menghapus satu item.
     public function removeItem(int $id): void
     {
         if (CartItem::destroy($id) === 0) {
@@ -61,7 +65,6 @@ class CartService
         }
     }
 
-    // Mengosongkan keranjang milik user.
     public function clearCart(int $userId): int
     {
         return CartItem::where('user_id', $userId)->delete();

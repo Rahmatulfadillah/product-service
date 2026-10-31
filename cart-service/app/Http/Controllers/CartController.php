@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\CartService;
 use App\Exceptions\CartItemNotFoundException;
+use App\Exceptions\ProductItemNotFoundException;
+
 use App\Http\Requests\AddCartItemRequest;
 use App\Http\Requests\UpdateCartItemRequest;
-use App\Services\CartService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -45,6 +47,8 @@ class CartController extends Controller
                 'message' => 'Item berhasil ditambahkan ke keranjang',
                 'data' => $item,
             ], $item->wasRecentlyCreated ? 201 : 200);
+        } catch (CartItemNotFoundException $e) {
+            return response()->json([  'message' => $e->getMessage(),  ], 404);
         } catch (Throwable $e) {
             return $this->errorResponse($e, 'menambahkan item');
         }
@@ -93,19 +97,21 @@ class CartController extends Controller
     }
 
     // DELETE /carts/{userId}
-    public function clear(int $userId): JsonResponse
-    {
-        try {
-            return response()->json([
-                'message' => 'Keranjang berhasil dikosongkan',
-                'data' => [
-                    'deleted_items' => $this->cartService->clearCart($userId),
-                ],
-            ]);
-        } catch (Throwable $e) {
-            return $this->errorResponse($e, 'mengosongkan keranjang');
-        }
+   public function clear(int $userId): JsonResponse
+{
+    try {
+      
+
+        return response()->json([
+            'message' => 'Keranjang berhasil dikosongkan',
+            'data' => [
+                'deleted_items' => $this->cartService->clearCart($userId),
+            ],
+        ]);
+    } catch (Throwable $e) {
+        return $this->errorResponse($e, 'mengosongkan keranjang');
     }
+}
 
     // Menangani error yang tidak terduga.
     private function errorResponse(
