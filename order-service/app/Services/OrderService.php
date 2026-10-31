@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Services\Clients\CartServiceClient;
 use App\Services\Clients\ProductServiceClient;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class OrderService
 {
@@ -16,6 +17,9 @@ class OrderService
     ) {
     }
 
+    /**
+     * Mengubah keranjang belanja menjadi pesanan.
+     */
     public function checkout(int $userId): Order
     {
         $cart = $this->cartClient->getCart($userId);
@@ -23,7 +27,8 @@ class OrderService
 
         if (count($items) === 0) {
             throw new OrderBusinessException(
-                'Keranjang belanja kosong.'
+                'Keranjang belanja kosong.',
+                409
             );
         }
 
@@ -51,7 +56,8 @@ class OrderService
 
                 if ($productId <= 0 || $quantity <= 0) {
                     throw new OrderBusinessException(
-                        'Data item keranjang tidak valid.'
+                        'Data item keranjang tidak valid.',
+                        422
                     );
                 }
 
@@ -59,13 +65,15 @@ class OrderService
 
                 if ($product === null) {
                     throw new OrderBusinessException(
-                        "Produk dengan ID {$productId} tidak ditemukan."
+                        "Produk dengan ID {$productId} tidak ditemukan.",
+                        409
                     );
                 }
 
                 if ($quantity > (int) $product['stock']) {
                     throw new OrderBusinessException(
-                        "Stok produk {$product['name']} tidak mencukupi."
+                        "Stok produk {$product['name']} tidak mencukupi.",
+                        409
                     );
                 }
 
@@ -89,21 +97,69 @@ class OrderService
             return $order;
         });
 
-        $this->cartClient->clearCart($userId);
+        // Pesanan sudah tersimpan.
+        // Kegagalan mengosongkan cart tidak membatalkan pesanan.
+        $cartCleared = $this->cartClient->clearCart($userId);
+
+        if (!$cartCleared) {
+            Log::warning('Checkout berhasil, tetapi cart gagal dikosongkan.', [
+                'order_id' => $order->id,
+                'user_id' => $userId,
+            ]);
+        }
 
         return $order->load('items');
     }
 
+    /**
+     * Mengambil detail pesanan.
+     */
     public function getById(int $orderId): ?Order
     {
         return Order::with('items')->find($orderId);
     }
 
-    public function getByUser(int $userId)
+    /**
+     * Mengambil daftar pesanan berdasarkan pengguna dan status.
+     */
+    public function getByUser(int $userId, ?string $status = null)
     {
-        return Order::with('items')
-            ->where('user_id', $userId)
-            ->latest()
-            ->get();
+        $query = Order::with('items')
+            ->where('user_id', $userId);
+
+        if ($status !== null) {
+            $query->where('status', $status);
+        }
+
+        return $query->latest()->get();
+    }
+
+    /**
+     * Mengubah status pesanan PENDING menjadi PAID.
+     */
+    public function payOrder(int $orderId): ?Order
+    {
+        return DB::transaction(function () use ($orderId) {
+            $order = Order::where('id', $orderId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($order === null) {
+                return null;
+            }
+
+            if ($order->status !== 'PENDING') {
+                throw new OrderBusinessException(
+                    'Pesanan tidak dapat dibayar karena statusnya bukan PENDING.',
+                    409
+                );
+            }
+
+            $order->update([
+                'status' => 'PAID',
+            ]);
+
+            return $order->load('items');
+        });
     }
 }
